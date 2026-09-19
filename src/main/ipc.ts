@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, net, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
 import {
   getAudioQuality,
@@ -22,6 +22,20 @@ import {
 } from './ytdlp'
 import { fetchLyrics } from './lyrics'
 import { extractArtwork } from './artwork'
+
+const REPO = 'yakiisama/muse'
+
+function isNewerVersion(latest: string, current: string): boolean {
+  const parts = (v: string): number[] => v.split('.').map((n) => parseInt(n, 10) || 0)
+  const a = parts(latest)
+  const b = parts(current)
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i] ?? 0
+    const y = b[i] ?? 0
+    if (x !== y) return x > y
+  }
+  return false
+}
 
 export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle('search:query', async (_event, query: string) => {
@@ -74,6 +88,30 @@ export function registerIpcHandlers(win: BrowserWindow): void {
 
   ipcMain.handle('settings:openDownloadDir', () => {
     shell.openPath(getDownloadDir())
+  })
+
+  ipcMain.handle('app:getVersion', () => app.getVersion())
+
+  ipcMain.handle('app:openExternal', (_event, url: string) => {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'https:' || !parsed.hostname.endsWith('github.com')) {
+      throw new Error('不支持打开该链接')
+    }
+    return shell.openExternal(url)
+  })
+
+  ipcMain.handle('update:check', async () => {
+    const currentVersion = app.getVersion()
+    const res = await net.fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
+    if (!res.ok) throw new Error(`GitHub 返回 ${res.status}`)
+    const data = (await res.json()) as { tag_name?: string; html_url?: string }
+    const latestVersion = (data.tag_name ?? '').replace(/^v/, '')
+    return {
+      currentVersion,
+      latestVersion,
+      hasUpdate: latestVersion.length > 0 && isNewerVersion(latestVersion, currentVersion),
+      releaseUrl: data.html_url ?? `https://github.com/${REPO}/releases`
+    }
   })
 
   ipcMain.handle('download:start', (_event, result: SearchResult) => {

@@ -39,3 +39,10 @@ export interface AppSettings {
   downloadDir: string
   audioQuality: AudioQuality
 }
+
+export interface UpdateCheckResult {
+  currentVersion: string
+  latestVersion: string
+  hasUpdate: boolean
+  releaseUrl: string
+}

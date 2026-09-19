@@ -5,7 +5,8 @@ import type {
   DownloadProgressEvent,
   LyricsResult,
   SearchResult,
-  Song
+  Song,
+  UpdateCheckResult
 } from '@shared/types'
 
 const api = {
@@ -44,7 +45,11 @@ const api = {
   chooseDownloadDir: (): Promise<AppSettings> => ipcRenderer.invoke('settings:chooseDownloadDir'),
   openDownloadDir: (): Promise<void> => ipcRenderer.invoke('settings:openDownloadDir'),
   setAudioQuality: (quality: AudioQuality): Promise<AppSettings> =>
-    ipcRenderer.invoke('settings:setAudioQuality', quality)
+    ipcRenderer.invoke('settings:setAudioQuality', quality),
+
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+  openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
+  checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check')
 }
 
 contextBridge.exposeInMainWorld('api', api)

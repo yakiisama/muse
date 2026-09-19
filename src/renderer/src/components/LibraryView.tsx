@@ -1,7 +1,9 @@
 import { Music2, Pause, Play, Trash2 } from 'lucide-react'
 import { usePlayerStore } from '../store/player'
+import { useToastStore } from '../store/toast'
 import { toMediaUrl } from '../lib/mediaUrl'
 import { formatTime } from '../lib/format'
+import type { Song } from '@shared/types'
 
 export default function LibraryView(): React.JSX.Element {
   const library = usePlayerStore((s) => s.library)
@@ -10,6 +12,16 @@ export default function LibraryView(): React.JSX.Element {
   const playSong = usePlayerStore((s) => s.playSong)
   const togglePlay = usePlayerStore((s) => s.togglePlay)
   const removeFromLibrary = usePlayerStore((s) => s.removeFromLibrary)
+  const pushToast = useToastStore((s) => s.push)
+
+  async function handleRemove(song: Song): Promise<void> {
+    try {
+      await removeFromLibrary(song.id)
+      pushToast({ type: 'info', message: `已从音乐库移除《${song.title}》` })
+    } catch {
+      pushToast({ type: 'error', message: '移除失败，请重试' })
+    }
+  }
 
   if (library.length === 0) {
     return (
@@ -56,7 +68,7 @@ export default function LibraryView(): React.JSX.Element {
                   )}
                 </button>
                 <button
-                  onClick={() => removeFromLibrary(song.id)}
+                  onClick={() => handleRemove(song)}
                   className="absolute right-1.5 top-1.5 rounded-md bg-black/50 p-1 opacity-0 transition-opacity hover:bg-red-500/70 group-hover:opacity-100"
                 >
                   <Trash2 className="size-3.5 text-white" />
