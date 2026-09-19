@@ -46,3 +46,10 @@ export interface UpdateCheckResult {
   hasUpdate: boolean
   releaseUrl: string
 }
+
+export interface YtDlpUpdateCheckResult {
+  currentVersion: string
+  latestVersion: string
+  hasUpdate: boolean
+  downloadUrl: string
+}

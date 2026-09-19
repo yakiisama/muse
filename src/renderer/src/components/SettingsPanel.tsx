@@ -18,6 +18,8 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
   const [audioQuality, setAudioQuality] = useState<AudioQuality | null>(null)
   const [version, setVersion] = useState('')
   const [checking, setChecking] = useState(false)
+  const [ytdlpVersion, setYtdlpVersion] = useState('')
+  const [ytdlpChecking, setYtdlpChecking] = useState(false)
   const pushToast = useToastStore((s) => s.push)
 
   useEffect(() => {
@@ -26,6 +28,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
       setAudioQuality(s.audioQuality)
     })
     window.api.getAppVersion().then(setVersion)
+    window.api.getYtDlpVersion().then(setYtdlpVersion).catch(() => setYtdlpVersion('未知'))
   }, [])
 
   async function handleChangeDir(): Promise<void> {
@@ -65,6 +68,42 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
       pushToast({ type: 'error', message: `检查更新失败：${message}` })
     } finally {
       setChecking(false)
+    }
+  }
+
+  async function handleUpdateYtDlp(downloadUrl: string): Promise<void> {
+    try {
+      const res = await window.api.updateYtDlp(downloadUrl)
+      setYtdlpVersion(res.version)
+      pushToast({ type: 'success', message: `下载引擎已更新到 ${res.version}` })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      pushToast({ type: 'error', message: `更新下载引擎失败：${message}` })
+    }
+  }
+
+  async function handleCheckYtDlpUpdate(): Promise<void> {
+    setYtdlpChecking(true)
+    try {
+      const res = await window.api.checkYtDlpUpdate()
+      if (res.hasUpdate) {
+        pushToast(
+          {
+            type: 'info',
+            message: `下载引擎有新版本 ${res.latestVersion}（当前 ${res.currentVersion || '未知'}）`,
+            actionLabel: '立即更新',
+            onAction: () => handleUpdateYtDlp(res.downloadUrl)
+          },
+          { sticky: true }
+        )
+      } else {
+        pushToast({ type: 'success', message: '下载引擎已是最新版本' })
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      pushToast({ type: 'error', message: `检查下载引擎更新失败：${message}` })
+    } finally {
+      setYtdlpChecking(false)
     }
   }
 
@@ -132,6 +171,30 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
                 className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50"
               >
                 {checking ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-3.5" />
+                )}
+                检查更新
+              </button>
+            </div>
+          </section>
+
+          <section>
+            <p className="mb-2 px-1 text-xs font-medium text-ink/40">下载引擎（yt-dlp）</p>
+            <div className="panel-sm flex items-center justify-between gap-3 rounded-lg p-3">
+              <div>
+                <p className="text-sm text-ink/70">{ytdlpVersion || '读取中…'}</p>
+                <p className="text-xs text-ink/40">
+                  YouTube 改版时可能导致搜索/下载失败，遇到问题可以先试试更新它
+                </p>
+              </div>
+              <button
+                onClick={handleCheckYtDlpUpdate}
+                disabled={ytdlpChecking}
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-brass/60 hover:text-brass disabled:opacity-50"
+              >
+                {ytdlpChecking ? (
                   <Loader2 className="size-3.5 animate-spin" />
                 ) : (
                   <RefreshCw className="size-3.5" />

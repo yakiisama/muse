@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, Loader2, Pause, Play, Search as SearchIcon } from 'lucide-react'
+import { Check, Download, Loader2, Pause, Play, Search as SearchIcon } from 'lucide-react'
 import type { SearchResult } from '@shared/types'
 import { usePlayerStore } from '../store/player'
 import { formatTime } from '../lib/format'
@@ -10,8 +10,10 @@ export default function SearchView(): React.JSX.Element {
   const [query, setQuery] = useState(DEFAULT_QUERY)
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [requestedIds, setRequestedIds] = useState<Set<string>>(new Set())
-  const addDownloadTask = usePlayerStore((s) => s.addDownloadTask)
+  const library = usePlayerStore((s) => s.library)
+  const downloads = usePlayerStore((s) => s.downloads)
+  const startDownload = usePlayerStore((s) => s.startDownload)
+  const retryDownload = usePlayerStore((s) => s.retryDownload)
   const nowPlaying = usePlayerStore((s) => s.nowPlaying)
   const isPlaying = usePlayerStore((s) => s.isPlaying)
   const previewLoadingId = usePlayerStore((s) => s.previewLoadingId)
@@ -37,19 +39,17 @@ export default function SearchView(): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleDownload(result: SearchResult): Promise<void> {
-    setRequestedIds((prev) => new Set(prev).add(result.id))
-    const { taskId } = await window.api.startDownload(result)
-    addDownloadTask({
-      taskId,
-      title: result.title,
-      artist: result.artist,
-      thumbnail: result.thumbnail,
-      percent: 0,
-      eta: '',
-      speed: '',
-      status: 'downloading'
-    })
+  /** 根据库和下载队列的真实状态判断这首歌该显示什么下载按钮，而不是只在当前搜索会话内记一个"已加入" */
+  function downloadState(
+    result: SearchResult
+  ): { kind: 'idle' } | { kind: 'downloading' } | { kind: 'done' } | { kind: 'retry'; taskId: string } {
+    if (library.some((s) => s.id === result.id)) return { kind: 'done' }
+    const task = downloads.find((d) => d.result.id === result.id)
+    if (task?.status === 'downloading') return { kind: 'downloading' }
+    if (task?.status === 'error' || task?.status === 'canceled') {
+      return { kind: 'retry', taskId: task.taskId }
+    }
+    return { kind: 'idle' }
   }
 
   return (
@@ -72,7 +72,7 @@ export default function SearchView(): React.JSX.Element {
         )}
         <ul className="flex flex-col">
           {results.map((r) => {
-            const requested = requestedIds.has(r.id)
+            const dl = downloadState(r)
             const isPreviewing = nowPlaying?.id === r.id && !nowPlaying.isLibrary
             const previewLoading = previewLoadingId === r.id
             return (
@@ -117,14 +117,31 @@ export default function SearchView(): React.JSX.Element {
                 <span className="text-xs tabular-nums text-ink/30">
                   {formatTime(r.duration)}
                 </span>
-                <button
-                  onClick={() => handleDownload(r)}
-                  disabled={requested}
-                  className={`ml-2 flex items-center gap-1 rounded-md border border-ink/15 px-3 py-1.5 text-xs text-ink/70 transition-colors hover:border-brass hover:text-brass ${requested ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'}`}
-                >
-                  <Download className="size-3.5" />
-                  {requested ? '已加入' : '下载'}
-                </button>
+                {dl.kind === 'done' ? (
+                  <span className="ml-2 flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-ink/40">
+                    <Check className="size-3.5" />
+                    已下载
+                  </span>
+                ) : dl.kind === 'downloading' ? (
+                  <span className="ml-2 flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-brass">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    下载中
+                  </span>
+                ) : (
+                  <button
+                    onClick={() =>
+                      dl.kind === 'retry' ? retryDownload(dl.taskId) : startDownload(r)
+                    }
+                    className={`ml-2 flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                      dl.kind === 'retry'
+                        ? 'border-red-400/50 text-red-500 hover:border-red-500 hover:text-red-600'
+                        : 'border-ink/15 text-ink/70 opacity-0 hover:border-brass hover:text-brass group-hover:opacity-100'
+                    }`}
+                  >
+                    <Download className="size-3.5" />
+                    {dl.kind === 'retry' ? '重试' : '下载'}
+                  </button>
+                )}
               </li>
             )
           })}

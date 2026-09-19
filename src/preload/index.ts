@@ -6,7 +6,8 @@ import type {
   LyricsResult,
   SearchResult,
   Song,
-  UpdateCheckResult
+  UpdateCheckResult,
+  YtDlpUpdateCheckResult
 } from '@shared/types'
 
 const api = {
@@ -34,6 +35,12 @@ const api = {
     ipcRenderer.on('download:error', listener)
     return () => ipcRenderer.removeListener('download:error', listener)
   },
+  onDownloadCanceled: (cb: (e: { taskId: string }) => void) => {
+    const listener = (_: unknown, payload: { taskId: string }): void => cb(payload)
+    ipcRenderer.on('download:canceled', listener)
+    return () => ipcRenderer.removeListener('download:canceled', listener)
+  },
+  cancelDownload: (taskId: string): Promise<void> => ipcRenderer.invoke('download:cancel', taskId),
 
   listLibrary: (): Promise<Song[]> => ipcRenderer.invoke('library:list'),
   removeSong: (id: string): Promise<void> => ipcRenderer.invoke('library:remove', id),
@@ -49,7 +56,12 @@ const api = {
 
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
   openExternal: (url: string): Promise<void> => ipcRenderer.invoke('app:openExternal', url),
-  checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check')
+  checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check'),
+
+  getYtDlpVersion: (): Promise<string> => ipcRenderer.invoke('ytdlp:getVersion'),
+  checkYtDlpUpdate: (): Promise<YtDlpUpdateCheckResult> => ipcRenderer.invoke('ytdlp:checkUpdate'),
+  updateYtDlp: (downloadUrl: string): Promise<{ version: string }> =>
+    ipcRenderer.invoke('ytdlp:update', downloadUrl)
 }
 
 contextBridge.exposeInMainWorld('api', api)

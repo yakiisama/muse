@@ -4,13 +4,14 @@ import { toMediaUrl } from '../lib/mediaUrl'
 
 export interface DownloadTask {
   taskId: string
+  result: SearchResult
   title: string
   artist: string
   thumbnail: string | null
   percent: number
   eta: string
   speed: string
-  status: 'downloading' | 'done' | 'error'
+  status: 'downloading' | 'done' | 'error' | 'canceled'
   message?: string
 }
 
@@ -50,10 +51,14 @@ interface PlayerState {
   volume: number
 
   loadLibrary: () => Promise<void>
-  addDownloadTask: (task: DownloadTask) => void
+  startDownload: (result: SearchResult) => Promise<void>
+  retryDownload: (taskId: string) => Promise<void>
+  removeDownloadTask: (taskId: string) => void
+  clearFinishedDownloads: () => void
   updateDownloadProgress: (taskId: string, percent: number, eta: string, speed: string) => void
   completeDownload: (taskId: string, song: Song) => void
   failDownload: (taskId: string, message: string) => void
+  cancelDownloadTask: (taskId: string) => void
 
   playSong: (song: Song, queue?: Song[]) => void
   playPreview: (result: SearchResult) => Promise<void>
@@ -84,7 +89,38 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     set({ library })
   },
 
-  addDownloadTask: (task) => set((s) => ({ downloads: [task, ...s.downloads] })),
+  startDownload: async (result) => {
+    const { taskId } = await window.api.startDownload(result)
+    set((s) => ({
+      downloads: [
+        {
+          taskId,
+          result,
+          title: result.title,
+          artist: result.artist,
+          thumbnail: result.thumbnail,
+          percent: 0,
+          eta: '',
+          speed: '',
+          status: 'downloading'
+        },
+        ...s.downloads
+      ]
+    }))
+  },
+
+  retryDownload: async (taskId) => {
+    const task = get().downloads.find((d) => d.taskId === taskId)
+    if (!task) return
+    set((s) => ({ downloads: s.downloads.filter((d) => d.taskId !== taskId) }))
+    await get().startDownload(task.result)
+  },
+
+  removeDownloadTask: (taskId) =>
+    set((s) => ({ downloads: s.downloads.filter((d) => d.taskId !== taskId) })),
+
+  clearFinishedDownloads: () =>
+    set((s) => ({ downloads: s.downloads.filter((d) => d.status === 'downloading') })),
 
   updateDownloadProgress: (taskId, percent, eta, speed) =>
     set((s) => ({
@@ -104,6 +140,11 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       downloads: s.downloads.map((d) =>
         d.taskId === taskId ? { ...d, status: 'error', message } : d
       )
+    })),
+
+  cancelDownloadTask: (taskId) =>
+    set((s) => ({
+      downloads: s.downloads.map((d) => (d.taskId === taskId ? { ...d, status: 'canceled' } : d))
     })),
 
   playSong: (song, queue) =>

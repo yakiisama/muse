@@ -21,6 +21,7 @@ export default function App(): React.JSX.Element {
   const updateDownloadProgress = usePlayerStore((s) => s.updateDownloadProgress)
   const completeDownload = usePlayerStore((s) => s.completeDownload)
   const failDownload = usePlayerStore((s) => s.failDownload)
+  const cancelDownloadTask = usePlayerStore((s) => s.cancelDownloadTask)
   const pushToast = useToastStore((s) => s.push)
   const { audioElement, seekTo, seekBy } = useAudioPlayer()
 
@@ -37,10 +38,15 @@ export default function App(): React.JSX.Element {
       failDownload(e.taskId, e.message)
       pushToast({ type: 'error', message: `下载失败：${e.message}` })
     })
+    const offCanceled = window.api.onDownloadCanceled((e) => {
+      cancelDownloadTask(e.taskId)
+      pushToast({ type: 'info', message: '下载已取消' })
+    })
     return () => {
       offProgress()
       offDone()
       offError()
+      offCanceled()
     }
   }, [])
 

@@ -126,38 +126,51 @@ export function resolveStreamUrl(sourceUrl: string): Promise<string> {
   })
 }
 
+export class DownloadCanceledError extends Error {
+  constructor() {
+    super('下载已取消')
+    this.name = 'DownloadCanceledError'
+  }
+}
+
+export interface DownloadHandle {
+  promise: Promise<string>
+  cancel: () => void
+}
+
 export function downloadTrack(
   sourceUrl: string,
   videoId: string,
   outputPath: string,
   quality: AudioQuality,
   onProgress: (progress: DownloadProgress) => void
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const proc = spawn(getYtDlpPath(), [
-      '--no-warnings',
-      '-f',
-      'bestaudio/best',
-      '-x',
-      '--audio-format',
-      'mp3',
-      '--audio-quality',
-      quality,
-      '--embed-thumbnail',
-      '--add-metadata',
-      '--ffmpeg-location',
-      getFfmpegPath(),
-      '--progress',
-      '--newline',
-      '--progress-template',
-      'download:{"percent":%(progress._percent)f,"eta":"%(progress._eta_str)s","speed":"%(progress._speed_str)s"}',
-      '--print',
-      'after_move:FILEPATH::%(filepath)s',
-      '-o',
-      outputPath,
-      sourceUrl
-    ])
+): DownloadHandle {
+  let canceled = false
+  const proc = spawn(getYtDlpPath(), [
+    '--no-warnings',
+    '-f',
+    'bestaudio/best',
+    '-x',
+    '--audio-format',
+    'mp3',
+    '--audio-quality',
+    quality,
+    '--embed-thumbnail',
+    '--add-metadata',
+    '--ffmpeg-location',
+    getFfmpegPath(),
+    '--progress',
+    '--newline',
+    '--progress-template',
+    'download:{"percent":%(progress._percent)f,"eta":"%(progress._eta_str)s","speed":"%(progress._speed_str)s"}',
+    '--print',
+    'after_move:FILEPATH::%(filepath)s',
+    '-o',
+    outputPath,
+    sourceUrl
+  ])
 
+  const promise = new Promise<string>((resolve, reject) => {
     let filePath: string | null = null
     let buffer = ''
     let stderr = ''
@@ -184,6 +197,10 @@ export function downloadTrack(
     proc.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()))
     proc.on('error', reject)
     proc.on('close', (code) => {
+      if (canceled) {
+        reject(new DownloadCanceledError())
+        return
+      }
       if (code !== 0 || !filePath) {
         reject(new Error(stderr.trim() || `下载失败 (yt-dlp exit ${code})，videoId=${videoId}`))
         return
@@ -191,4 +208,12 @@ export function downloadTrack(
       resolve(filePath)
     })
   })
+
+  return {
+    promise,
+    cancel: () => {
+      canceled = true
+      proc.kill()
+    }
+  }
 }

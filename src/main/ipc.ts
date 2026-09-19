@@ -15,6 +15,7 @@ import {
 import type { AudioQuality } from '@shared/types'
 import {
   buildOutputPath,
+  DownloadCanceledError,
   downloadTrack,
   resolveStreamUrl,
   searchYoutube,
@@ -22,8 +23,10 @@ import {
 } from './ytdlp'
 import { fetchLyrics } from './lyrics'
 import { extractArtwork } from './artwork'
+import { downloadYtDlpUpdate, getLatestYtDlp, getYtDlpVersion } from './ytdlpUpdate'
 
 const REPO = 'yakiisama/muse'
+const downloadCancelers = new Map<string, () => void>()
 
 function isNewerVersion(latest: string, current: string): boolean {
   const parts = (v: string): number[] => v.split('.').map((n) => parseInt(n, 10) || 0)
@@ -119,9 +122,18 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     const outputPath = buildOutputPath(getDownloadDir(), result.title, result.artist, result.id)
     const quality = getAudioQuality()
 
-    downloadTrack(result.sourceUrl, result.id, outputPath, quality, (progress) => {
-      win.webContents.send('download:progress', { taskId, ...progress })
-    })
+    const { promise, cancel } = downloadTrack(
+      result.sourceUrl,
+      result.id,
+      outputPath,
+      quality,
+      (progress) => {
+        win.webContents.send('download:progress', { taskId, ...progress })
+      }
+    )
+    downloadCancelers.set(taskId, cancel)
+
+    promise
       .then((filePath) => {
         const artworkPath = extractArtwork(filePath, result.id)
         const song: Song = {
@@ -138,9 +150,38 @@ export function registerIpcHandlers(win: BrowserWindow): void {
         win.webContents.send('download:done', { taskId, song })
       })
       .catch((err: Error) => {
-        win.webContents.send('download:error', { taskId, message: err.message })
+        if (err instanceof DownloadCanceledError) {
+          win.webContents.send('download:canceled', { taskId })
+        } else {
+          win.webContents.send('download:error', { taskId, message: err.message })
+        }
+      })
+      .finally(() => {
+        downloadCancelers.delete(taskId)
       })
 
     return { taskId }
+  })
+
+  ipcMain.handle('download:cancel', (_event, taskId: string) => {
+    downloadCancelers.get(taskId)?.()
+  })
+
+  ipcMain.handle('ytdlp:getVersion', () => getYtDlpVersion())
+
+  ipcMain.handle('ytdlp:checkUpdate', async () => {
+    const currentVersion = await getYtDlpVersion().catch(() => '')
+    const latest = await getLatestYtDlp()
+    return {
+      currentVersion,
+      latestVersion: latest.version,
+      hasUpdate: currentVersion !== latest.version,
+      downloadUrl: latest.downloadUrl
+    }
+  })
+
+  ipcMain.handle('ytdlp:update', async (_event, downloadUrl: string) => {
+    await downloadYtDlpUpdate(downloadUrl)
+    return { version: await getYtDlpVersion() }
   })
 }
