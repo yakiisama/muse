@@ -22,7 +22,7 @@ jobs:
         run: npm ci
 
       - name: Build DMG (arm64)
-        run: npm run build:mac
+        run: npm run build && npx electron-builder --mac --arm64 --publish never
 
       - name: Create release and upload DMG
         uses: softprops/action-gh-release@v2
