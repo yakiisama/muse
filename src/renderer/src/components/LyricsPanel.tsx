@@ -20,7 +20,7 @@ export default function LyricsPanel({ onClose }: Props): React.JSX.Element {
   }, [activeIndex])
 
   return (
-    <div className="glass absolute inset-y-3 right-3 z-30 flex w-80 flex-col overflow-hidden rounded-[26px]">
+    <div className="panel absolute inset-y-3 right-3 z-30 flex w-80 flex-col overflow-hidden rounded-2xl">
       <div className="flex items-center justify-between border-b border-ink/8 px-4 py-3">
         <p className="text-sm font-medium text-ink/80">歌词</p>
         <button onClick={onClose} className="rounded-full p-1.5 transition-colors hover:bg-ink/10">
@@ -42,7 +42,7 @@ export default function LyricsPanel({ onClose }: Props): React.JSX.Element {
                 key={i}
                 data-line={i}
                 className={`text-sm leading-relaxed transition-colors ${
-                  i === activeIndex ? 'text-accent-soft font-medium' : 'text-ink/35'
+                  i === activeIndex ? 'text-accent font-medium' : 'text-ink/35'
                 }`}
               >
                 {line.text || '♪'}

@@ -34,14 +34,14 @@ export default function LibraryView(): React.JSX.Element {
 
   return (
     <div className="h-full overflow-y-auto px-8 pt-10 pb-6">
-      <h1 className="mb-5 text-lg font-semibold text-ink/90">音乐库</h1>
+      <h1 className="mb-5 text-lg font-bold tracking-tight text-ink/90">音乐库</h1>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         {library.map((song) => {
           const isCurrent = nowPlaying?.id === song.id && nowPlaying.isLibrary
           return (
             <div
               key={song.id}
-              className="group relative flex flex-col gap-2 rounded-2xl p-2 transition-colors hover:bg-ink/[0.06]"
+              className="group relative flex flex-col gap-2 rounded-lg p-2 transition-colors hover:bg-ink/[0.05]"
             >
               <div className="relative aspect-square overflow-hidden rounded-xl bg-ink/10 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]">
                 {song.artworkPath ? (
@@ -76,7 +76,7 @@ export default function LibraryView(): React.JSX.Element {
               </div>
               <div className="min-w-0 px-0.5">
                 <p
-                  className={`truncate text-sm ${isCurrent ? 'text-accent-soft' : 'text-ink/85'}`}
+                  className={`truncate text-sm ${isCurrent ? 'text-accent' : 'text-ink/85'}`}
                 >
                   {song.title}
                 </p>

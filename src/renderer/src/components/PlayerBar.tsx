@@ -39,7 +39,7 @@ export default function PlayerBar({
   const prev = usePlayerStore((s) => s.prev)
 
   return (
-    <div className="glass relative mx-3 mb-3 flex h-20 shrink-0 items-center gap-4 rounded-[26px] px-5">
+    <div className="panel relative mx-3 mb-3 flex h-20 shrink-0 items-center gap-4 rounded-2xl px-5">
       <div className="flex w-52 min-w-0 items-center gap-3">
         <button
           onClick={onOpenImmersive}
@@ -83,7 +83,7 @@ export default function PlayerBar({
           <button
             onClick={togglePlay}
             disabled={!nowPlaying}
-            className="flex size-9 items-center justify-center rounded-full bg-gradient-to-b from-accent to-accent-soft text-white shadow-[0_4px_18px_-2px_rgba(218,119,86,0.6)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-30 disabled:shadow-none"
+            className="flex size-9 items-center justify-center rounded-full bg-accent text-paper transition-transform hover:scale-105 active:scale-95 disabled:opacity-30"
           >
             {isPlaying ? <Pause className="size-4" /> : <Play className="size-4 translate-x-[1px]" />}
           </button>
@@ -106,7 +106,7 @@ export default function PlayerBar({
             value={Math.min(currentTime, duration || 0)}
             onChange={(e) => seekTo(Number(e.target.value))}
             disabled={!nowPlaying}
-            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-ink/15 accent-[#da7756]"
+            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-ink/15 accent-[var(--color-accent)]"
           />
           <span className="w-9 text-[11px] tabular-nums text-ink/30">
             {formatTime(duration)}
@@ -117,7 +117,7 @@ export default function PlayerBar({
       <div className="flex w-40 items-center justify-end gap-3">
         <button
           onClick={onToggleLyrics}
-          className={`rounded-full p-1.5 transition-colors ${lyricsOpen ? 'glass-pill text-accent-soft' : 'text-ink/50 hover:bg-ink/8 hover:text-ink'}`}
+          className={`rounded-md p-1.5 transition-colors ${lyricsOpen ? 'bg-ink/8 text-accent' : 'text-ink/50 hover:bg-ink/8 hover:text-ink'}`}
         >
           <ListMusic className="size-4" />
         </button>
@@ -129,7 +129,7 @@ export default function PlayerBar({
           step={0.01}
           value={volume}
           onChange={(e) => setVolume(Number(e.target.value))}
-          className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-ink/15 accent-[#da7756]"
+          className="h-1 w-20 cursor-pointer appearance-none rounded-full bg-ink/15 accent-[var(--color-accent)]"
         />
       </div>
     </div>

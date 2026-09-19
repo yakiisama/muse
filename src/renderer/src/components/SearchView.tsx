@@ -54,7 +54,7 @@ export default function SearchView(): React.JSX.Element {
 
   return (
     <div className="flex h-full flex-col px-8 pt-10">
-      <div className="glass-pill flex items-center gap-2 rounded-full px-4 py-3 transition-shadow focus-within:shadow-[0_0_0_3px_rgba(218,119,86,0.3)]">
+      <div className="panel-sm flex items-center gap-2 rounded-lg px-4 py-3 transition-colors focus-within:border-accent/50">
         <SearchIcon className="size-4 text-ink/40" />
         <input
           value={query}
@@ -70,7 +70,7 @@ export default function SearchView(): React.JSX.Element {
         {results.length === 0 && !loading && (
           <p className="mt-16 text-center text-sm text-ink/30">输入关键词并回车开始搜索</p>
         )}
-        <ul className="flex flex-col gap-1">
+        <ul className="flex flex-col">
           {results.map((r) => {
             const requested = requestedIds.has(r.id)
             const isPreviewing = nowPlaying?.id === r.id && !nowPlaying.isLibrary
@@ -78,7 +78,7 @@ export default function SearchView(): React.JSX.Element {
             return (
               <li
                 key={r.id}
-                className="group flex items-center gap-3 rounded-2xl px-2.5 py-2.5 transition-colors hover:bg-ink/[0.06]"
+                className="hairline-b group flex items-center gap-3 px-2.5 py-2.5 transition-colors hover:bg-ink/[0.05]"
               >
                 <button
                   onClick={() => (isPreviewing ? togglePlay() : playPreview(r))}
@@ -102,7 +102,7 @@ export default function SearchView(): React.JSX.Element {
                 </button>
                 <div className="min-w-0 flex-1">
                   <p
-                    className={`truncate text-sm ${isPreviewing ? 'text-accent-soft' : 'text-ink/90'}`}
+                    className={`truncate text-sm ${isPreviewing ? 'text-accent' : 'text-ink/90'}`}
                   >
                     {r.title}
                   </p>
@@ -120,7 +120,7 @@ export default function SearchView(): React.JSX.Element {
                 <button
                   onClick={() => handleDownload(r)}
                   disabled={requested}
-                  className={`glass-pill ml-2 flex items-center gap-1 rounded-full px-3 py-1.5 text-xs text-ink/70 transition-opacity hover:text-accent-soft ${requested ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'}`}
+                  className={`ml-2 flex items-center gap-1 rounded-md border border-ink/15 px-3 py-1.5 text-xs text-ink/70 transition-colors hover:border-brass hover:text-brass ${requested ? 'opacity-60' : 'opacity-0 group-hover:opacity-100'}`}
                 >
                   <Download className="size-3.5" />
                   {requested ? '已加入' : '下载'}

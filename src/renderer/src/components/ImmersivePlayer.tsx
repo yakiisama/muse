@@ -137,7 +137,7 @@ export default function ImmersivePlayer({ onClose, seekTo, seekBy }: Props): Rea
             step={0.1}
             value={Math.min(currentTime, duration || 0)}
             onChange={(e) => seekTo(Number(e.target.value))}
-            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-[#da7756]"
+            className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-[var(--color-accent-soft)]"
           />
           <span className="w-10 text-xs tabular-nums text-white/50">{formatTime(duration)}</span>
         </div>
@@ -154,7 +154,7 @@ export default function ImmersivePlayer({ onClose, seekTo, seekBy }: Props): Rea
           </button>
           <button
             onClick={togglePlay}
-            className="flex size-16 items-center justify-center rounded-full bg-gradient-to-b from-accent to-accent-soft text-white shadow-[0_8px_30px_-6px_rgba(218,119,86,0.7)] transition-transform hover:scale-105 active:scale-95"
+            className="flex size-16 items-center justify-center rounded-full bg-accent-soft text-white transition-transform hover:scale-105 active:scale-95"
           >
             {isPlaying ? (
               <Pause className="size-7" />
@@ -182,7 +182,7 @@ export default function ImmersivePlayer({ onClose, seekTo, seekBy }: Props): Rea
             step={0.01}
             value={volume}
             onChange={(e) => setVolume(Number(e.target.value))}
-            className="h-1 w-28 cursor-pointer appearance-none rounded-full bg-white/20 accent-[#da7756]"
+            className="h-1 w-28 cursor-pointer appearance-none rounded-full bg-white/20 accent-[var(--color-accent-soft)]"
           />
         </div>
       </div>

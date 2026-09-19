@@ -51,7 +51,7 @@ export default function App(): React.JSX.Element {
       <div className="h-8 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
       <div className="relative flex min-h-0 flex-1 gap-3 px-3">
         <Sidebar tab={tab} onTabChange={setTab} onOpenSettings={() => setSettingsOpen(true)} />
-        <main className="relative min-w-0 flex-1 overflow-hidden rounded-[26px]">
+        <main className="relative min-w-0 flex-1 overflow-hidden rounded-2xl">
           <div className={`h-full ${tab === 'search' ? '' : 'hidden'}`}>
             <SearchView />
           </div>
