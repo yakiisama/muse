@@ -88,7 +88,7 @@ export default function PlayerBar({
             onClick={togglePlay}
             disabled={!nowPlaying}
             aria-label={isPlaying ? '暂停' : '播放'}
-            className="flex size-9 items-center justify-center rounded-full bg-accent text-accent-fg transition-[transform,background-color] duration-300 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
+            className="flex size-9 items-center justify-center rounded-full bg-accent text-accent-fg transition-transform hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
           >
             {isPlaying ? <Pause className="size-4" /> : <Play className="size-4 translate-x-[1px]" />}
           </button>

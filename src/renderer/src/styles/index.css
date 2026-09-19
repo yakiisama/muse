@@ -2,8 +2,7 @@
 
 /* ---- 原生 macOS 风 ----
  * 窗口开了 vibrancy，body 留透明让侧栏透出桌面毛玻璃；主内容区 / 播放条自己铺不透明底色。
- * 灰阶跟随系统浅色 / 深色；强调色 --color-accent 由当前播放封面动态取色（见 hooks/useArtworkAccent），
- * 没有封面时回退到珊瑚红。
+ * 灰阶跟随系统浅色 / 深色，强调色固定珊瑚红（深色模式下稍提亮）。
  */
 @theme {
   --color-panel: #ffffff;

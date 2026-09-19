@@ -72,13 +72,9 @@ app.whenReady().then(() => {
   // 本地下载文件/封面图通过 media:// 协议提供给渲染进程。
   // 渲染进程在开发态是从 http://localhost 加载的，浏览器不允许 http 页面直接读取 file://
   // 资源（图片会挂空、<audio> 播放会静默失败），自定义协议绕开这个限制，生产态同样适用。
-  // 补一个 CORS 头：渲染进程要把封面画进 canvas 取主色，跨源图片没有这个头 canvas 会被污染读不出像素。
-  protocol.handle(MEDIA_SCHEME, async (request) => {
+  protocol.handle(MEDIA_SCHEME, (request) => {
     const filePath = decodeURIComponent(request.url.replace(`${MEDIA_SCHEME}://local/`, ''))
-    const res = await net.fetch(pathToFileURL(filePath).toString())
-    const headers = new Headers(res.headers)
-    headers.set('Access-Control-Allow-Origin', '*')
-    return new Response(res.body, { status: res.status, headers })
+    return net.fetch(pathToFileURL(filePath).toString())
   })
 
   createWindow()

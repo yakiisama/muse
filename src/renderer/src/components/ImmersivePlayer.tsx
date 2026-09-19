@@ -62,14 +62,13 @@ export default function ImmersivePlayer({ onClose, seekTo, seekBy }: Props): Rea
       className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#1c1c1e] text-white"
       style={DRAG}
     >
-      {/* 背景：模糊放大的封面 + 封面主色的渐变，没封面时只剩渐变 */}
+      {/* 背景：封面放大 + 模糊 + 压暗，整体色调跟着专辑走 */}
       <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,var(--color-accent),transparent_60%)] opacity-60 transition-colors duration-700" />
         {nowPlaying.artworkUrl && (
           <img
             src={nowPlaying.artworkUrl}
             alt=""
-            className="size-full scale-125 object-cover opacity-70 blur-3xl"
+            className="size-full scale-125 object-cover blur-3xl"
           />
         )}
         <div className="absolute inset-0 bg-black/50" />

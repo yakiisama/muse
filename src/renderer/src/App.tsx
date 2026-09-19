@@ -9,7 +9,6 @@ import ImmersivePlayer from './components/ImmersivePlayer'
 import SettingsPanel from './components/SettingsPanel'
 import Toaster from './components/Toaster'
 import { useAudioPlayer } from './hooks/useAudioPlayer'
-import { useArtworkAccent } from './hooks/useArtworkAccent'
 import { usePlayerStore } from './store/player'
 import { useToastStore } from './store/toast'
 
@@ -25,7 +24,6 @@ export default function App(): React.JSX.Element {
   const cancelDownloadTask = usePlayerStore((s) => s.cancelDownloadTask)
   const pushToast = useToastStore((s) => s.push)
   const { audioElement, seekTo, seekBy } = useAudioPlayer()
-  useArtworkAccent()
 
   useEffect(() => {
     loadLibrary()
