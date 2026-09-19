@@ -1,17 +1,12 @@
 # Muse
 
-搜索、下载、播放一体的 macOS 桌面音乐工具。下载引擎基于 [yt-dlp](https://github.com/yt-dlp/yt-dlp)，歌词来自 [lrclib.net](https://lrclib.net)。
+一体化 macOS 桌面音乐工具：搜索、下载、播放。下载引擎基于 [yt-dlp](https://github.com/yt-dlp/yt-dlp)，歌词来自 [lrclib.net](https://lrclib.net)。仅支持 Apple Silicon（M 系列）Mac。
 
 ## 下载
 
-前往 [Releases](https://github.com/yakiisama/muse/releases) 下载最新的 DMG（**仅支持 Apple Silicon / M 芯片 Mac**）。
+前往 [Releases](https://github.com/yakiisama/muse/releases) 下载最新 DMG。
 
-由于没有 Apple 开发者账号，安装包**未经签名、未经公证**，从浏览器下载的 DMG 会被 macOS 自动加上隔离标记，首次打开 App 时会提示「无法验证开发者」，需要：
-
-- 右键点击 App → 打开，在弹窗里点「仍要打开」；或
-- 终端执行：`xattr -d com.apple.quarantine /Applications/Muse.app`
-
-这一步是必须的，跟从哪里下载无关，本地自己打包安装也会遇到同样的提示。
+> 安装包未经 Apple 签名与公证，首次打开会提示「无法验证开发者」：右键点击 App → 打开 → 仍要打开；或终端执行 `xattr -d com.apple.quarantine /Applications/Muse.app`。
 
 ## 开发
 
@@ -26,11 +21,13 @@ npm run dev
 npm run build:mac
 ```
 
-产物在 `dist/` 目录下（dmg + zip，**仅 Apple Silicon / arm64**，不构建 Intel 版本）。Intel Mac 用户双击打开时，macOS 会自动弹出系统原生提示「Muse 不支持此 Mac」，不需要我们额外处理；分发时建议提前注明「仅支持 M 芯片 Mac」。首次打开的「无法验证开发者」提示见上方「下载」一节。
+产物在 `dist/` 目录下（dmg + zip，仅 arm64）。
 
 ## 目录结构
 
-- `src/main` — Electron 主进程：yt-dlp 调用、下载队列、本地 JSON 库、歌词查询
-- `src/preload` — 通过 `contextBridge` 暴露给渲染进程的安全 API
-- `src/renderer` — React 界面
-- `resources/bin/mac` — 打包进 App 的 yt-dlp / ffmpeg 二进制（不依赖用户本机环境）
+| 路径 | 说明 |
+| --- | --- |
+| `src/main` | Electron 主进程：yt-dlp 调用、下载队列、本地 JSON 库、歌词查询 |
+| `src/preload` | 通过 `contextBridge` 暴露给渲染进程的安全 API |
+| `src/renderer` | React 界面 |
+| `resources/bin/mac` | 打包进 App 的 yt-dlp / ffmpeg 二进制（不依赖用户本机环境） |
