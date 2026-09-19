@@ -1,12 +1,12 @@
-import { spawn } from 'node:child_process'
 import { chmodSync, mkdirSync, renameSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { net } from 'electron'
-import { getYtDlpOverridePath, getYtDlpPath } from './paths'
+import { getYtDlpOverridePath } from './paths'
+import { invalidateYtDlpRuntime, prewarmYtDlp, spawnYtDlp } from './ytdlpRuntime'
 
-export function getYtDlpVersion(): Promise<string> {
+export async function getYtDlpVersion(): Promise<string> {
+  const proc = await spawnYtDlp(['--version'])
   return new Promise((resolve, reject) => {
-    const proc = spawn(getYtDlpPath(), ['--version'])
     let stdout = ''
     proc.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()))
     proc.on('error', reject)
@@ -49,4 +49,7 @@ export async function downloadYtDlpUpdate(downloadUrl: string): Promise<void> {
   writeFileSync(tmp, buffer)
   chmodSync(tmp, 0o755)
   renameSync(tmp, target)
+  // 二进制换了，解压缓存作废，马上重新预热
+  invalidateYtDlpRuntime()
+  prewarmYtDlp()
 }

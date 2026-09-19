@@ -1,7 +1,8 @@
-import { spawn } from 'node:child_process'
+import type { ChildProcessWithoutNullStreams } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { getFfmpegPath, getYtDlpPath } from './paths'
+import { getFfmpegPath } from './paths'
+import { spawnYtDlp } from './ytdlpRuntime'
 import { cleanTrackTitle } from './titleClean'
 import type { AudioQuality, DownloadProgress, SearchResult } from '@shared/types'
 
@@ -40,9 +41,9 @@ export function buildOutputPath(
   return uniqueOutputPath(dir, base)
 }
 
-function runYtDlpJsonLines(args: string[]): Promise<unknown[]> {
+async function runYtDlpJsonLines(args: string[]): Promise<unknown[]> {
+  const proc = await spawnYtDlp(args)
   return new Promise((resolve, reject) => {
-    const proc = spawn(getYtDlpPath(), args)
     let buffer = ''
     const results: unknown[] = []
     proc.stdout.on('data', (chunk: Buffer) => {
@@ -107,9 +108,18 @@ export async function searchYoutube(query: string, limit = 20): Promise<SearchRe
 }
 
 /** 试听：只解析出可直接播放的音频直链，不落盘，供搜索结果"试听"按钮使用 */
-export function resolveStreamUrl(sourceUrl: string): Promise<string> {
+export async function resolveStreamUrl(sourceUrl: string): Promise<string> {
+  // 试听只要一条音频直链，跳过 HLS/DASH 清单的下载能省 1 秒多，拿到的仍是同一个 bestaudio 格式
+  const proc = await spawnYtDlp([
+    '--no-warnings',
+    '--extractor-args',
+    'youtube:skip=hls,dash',
+    '-f',
+    'bestaudio/best',
+    '-g',
+    sourceUrl
+  ])
   return new Promise((resolve, reject) => {
-    const proc = spawn(getYtDlpPath(), ['--no-warnings', '-f', 'bestaudio/best', '-g', sourceUrl])
     let stdout = ''
     let stderr = ''
     proc.stdout.on('data', (chunk: Buffer) => (stdout += chunk.toString()))
@@ -146,7 +156,8 @@ export function downloadTrack(
   onProgress: (progress: DownloadProgress) => void
 ): DownloadHandle {
   let canceled = false
-  const proc = spawn(getYtDlpPath(), [
+  let proc: ChildProcessWithoutNullStreams | null = null
+  const args = [
     '--no-warnings',
     '-f',
     'bestaudio/best',
@@ -168,52 +179,61 @@ export function downloadTrack(
     '-o',
     outputPath,
     sourceUrl
-  ])
+  ]
 
-  const promise = new Promise<string>((resolve, reject) => {
-    let filePath: string | null = null
-    let buffer = ''
-    let stderr = ''
+  const promise = (async (): Promise<string> => {
+    const p = await spawnYtDlp(args)
+    // 等预热的这段时间里用户可能已经点了取消
+    if (canceled) {
+      p.kill()
+      throw new DownloadCanceledError()
+    }
+    proc = p
+    return new Promise<string>((resolve, reject) => {
+      let filePath: string | null = null
+      let buffer = ''
+      let stderr = ''
 
-    proc.stdout.on('data', (chunk: Buffer) => {
-      buffer += chunk.toString()
-      const lines = buffer.split('\n')
-      buffer = lines.pop() ?? ''
-      for (const line of lines) {
-        const trimmed = line.trim()
-        if (!trimmed) continue
-        if (trimmed.startsWith('FILEPATH::')) {
-          filePath = trimmed.slice('FILEPATH::'.length)
-          continue
+      p.stdout.on('data', (chunk: Buffer) => {
+        buffer += chunk.toString()
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (!trimmed) continue
+          if (trimmed.startsWith('FILEPATH::')) {
+            filePath = trimmed.slice('FILEPATH::'.length)
+            continue
+          }
+          try {
+            const progress = JSON.parse(trimmed) as DownloadProgress
+            if (typeof progress.percent === 'number') onProgress(progress)
+          } catch {
+            // 忽略非进度/非文件路径的日志行
+          }
         }
-        try {
-          const progress = JSON.parse(trimmed) as DownloadProgress
-          if (typeof progress.percent === 'number') onProgress(progress)
-        } catch {
-          // 忽略非进度/非文件路径的日志行
+      })
+      p.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()))
+      p.on('error', reject)
+      p.on('close', (code) => {
+        if (canceled) {
+          reject(new DownloadCanceledError())
+          return
         }
-      }
+        if (code !== 0 || !filePath) {
+          reject(new Error(stderr.trim() || `下载失败 (yt-dlp exit ${code})，videoId=${videoId}`))
+          return
+        }
+        resolve(filePath)
+      })
     })
-    proc.stderr.on('data', (chunk: Buffer) => (stderr += chunk.toString()))
-    proc.on('error', reject)
-    proc.on('close', (code) => {
-      if (canceled) {
-        reject(new DownloadCanceledError())
-        return
-      }
-      if (code !== 0 || !filePath) {
-        reject(new Error(stderr.trim() || `下载失败 (yt-dlp exit ${code})，videoId=${videoId}`))
-        return
-      }
-      resolve(filePath)
-    })
-  })
+  })()
 
   return {
     promise,
     cancel: () => {
       canceled = true
-      proc.kill()
+      proc?.kill()
     }
   }
 }

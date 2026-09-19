@@ -17,7 +17,7 @@ interface PushOptions {
 
 interface ToastState {
   toasts: Toast[]
-  push: (toast: Omit<Toast, 'id'>, options?: PushOptions) => void
+  push: (toast: Omit<Toast, 'id'>, options?: PushOptions) => string
   dismiss: (id: string) => void
 }
 
@@ -30,6 +30,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
     if (!options?.sticky) {
       setTimeout(() => get().dismiss(id), options?.duration ?? 3200)
     }
+    return id
   },
 
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))

@@ -23,6 +23,7 @@ export default function App(): React.JSX.Element {
   const failDownload = usePlayerStore((s) => s.failDownload)
   const cancelDownloadTask = usePlayerStore((s) => s.cancelDownloadTask)
   const pushToast = useToastStore((s) => s.push)
+  const dismissToast = useToastStore((s) => s.dismiss)
   const { audioElement, seekTo, seekBy } = useAudioPlayer()
 
   useEffect(() => {
@@ -42,11 +43,25 @@ export default function App(): React.JSX.Element {
       cancelDownloadTask(e.taskId)
       pushToast({ type: 'info', message: '下载已取消' })
     })
+    // yt-dlp 首次启动要过系统安全评估，约 20 秒；这期间搜索/试听都会等它，给个说明免得像卡死
+    let warmupToast: string | null = null
+    const offWarmup = window.api.onYtDlpWarmup(({ state }) => {
+      if (state === 'start') {
+        warmupToast = pushToast(
+          { type: 'info', message: '首次启动正在初始化下载引擎，大约需要 20 秒，之后就快了' },
+          { sticky: true }
+        )
+      } else if (warmupToast) {
+        dismissToast(warmupToast)
+        warmupToast = null
+      }
+    })
     return () => {
       offProgress()
       offDone()
       offError()
       offCanceled()
+      offWarmup()
     }
   }, [])
 

@@ -37,6 +37,7 @@ export default function PlayerBar({
   const setVolume = usePlayerStore((s) => s.setVolume)
   const next = usePlayerStore((s) => s.next)
   const prev = usePlayerStore((s) => s.prev)
+  const previewLoading = usePlayerStore((s) => s.previewLoadingId !== null)
 
   const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 0
   const progress = safeDuration ? (Math.min(currentTime, safeDuration) / safeDuration) * 100 : 0
@@ -69,7 +70,9 @@ export default function PlayerBar({
           )}
         </button>
         <div className="min-w-0">
-          <p className="truncate text-[13px] font-medium text-ink/90">{nowPlaying?.title ?? '未在播放'}</p>
+          <p className="truncate text-[13px] font-medium text-ink/90">
+            {nowPlaying?.title ?? (previewLoading ? '正在获取播放地址…' : '未在播放')}
+          </p>
           <p className="truncate text-xs text-ink/45">
             {nowPlaying ? (nowPlaying.isLibrary ? nowPlaying.artist : `${nowPlaying.artist}（试听）`) : ''}
           </p>

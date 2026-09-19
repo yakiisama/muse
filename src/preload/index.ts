@@ -59,6 +59,11 @@ const api = {
   checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check'),
 
   getYtDlpVersion: (): Promise<string> => ipcRenderer.invoke('ytdlp:getVersion'),
+  onYtDlpWarmup: (cb: (e: { state: 'start' | 'done' }) => void) => {
+    const listener = (_: unknown, payload: { state: 'start' | 'done' }): void => cb(payload)
+    ipcRenderer.on('ytdlp:warmup', listener)
+    return () => ipcRenderer.removeListener('ytdlp:warmup', listener)
+  },
   checkYtDlpUpdate: (): Promise<YtDlpUpdateCheckResult> => ipcRenderer.invoke('ytdlp:checkUpdate'),
   updateYtDlp: (downloadUrl: string): Promise<{ version: string }> =>
     ipcRenderer.invoke('ytdlp:update', downloadUrl)

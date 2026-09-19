@@ -90,7 +90,11 @@ export default function SearchView(): React.JSX.Element {
                   ) : (
                     <div className="size-full bg-ink/10" />
                   )}
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span
+                    className={`absolute inset-0 flex items-center justify-center bg-black/45 transition-opacity group-hover:opacity-100 ${
+                      previewLoading ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
                     {previewLoading ? (
                       <Loader2 className="size-4 animate-spin text-white" />
                     ) : isPreviewing && isPlaying ? (
@@ -110,6 +114,8 @@ export default function SearchView(): React.JSX.Element {
                     <p className="truncate text-xs text-red-500" title={previewError.message}>
                       试听失败：{previewError.message}
                     </p>
+                  ) : previewLoading ? (
+                    <p className="truncate text-xs text-accent">正在获取播放地址…</p>
                   ) : (
                     <p className="truncate text-xs text-ink/45">{r.artist}</p>
                   )}

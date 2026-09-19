@@ -2,6 +2,7 @@ import { app, BrowserWindow, nativeImage, net, protocol, shell } from 'electron'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerIpcHandlers } from './ipc'
+import { onWarmup, prewarmYtDlp } from './ytdlpRuntime'
 
 const MEDIA_SCHEME = 'media'
 
@@ -39,6 +40,12 @@ function createWindow(): void {
   })
 
   registerIpcHandlers(win)
+
+  // 首次启动 yt-dlp 要解压 + 过系统安全评估（约 20 秒），先在后台做掉；同时告诉界面，好给个提示
+  onWarmup((state) => {
+    if (!win.isDestroyed()) win.webContents.send('ytdlp:warmup', { state })
+  })
+  prewarmYtDlp()
 
   if (is_dev()) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL']!)
