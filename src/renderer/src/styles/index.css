@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-accent: #da7756;
+  --color-accent-soft: #c2603f;
+  --color-ink: #3d3929;
+  --color-cream: #f5f4ed;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: #3d3929;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC', Inter, sans-serif;
+  overflow: hidden;
+  background:
+    radial-gradient(1100px 720px at 12% -8%, rgba(218, 119, 86, 0.16), transparent 58%),
+    radial-gradient(900px 620px at 108% 6%, rgba(201, 162, 121, 0.22), transparent 55%),
+    radial-gradient(800px 700px at 50% 118%, rgba(180, 94, 61, 0.1), transparent 55%),
+    #f5f4ed;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(61, 57, 41, 0.16);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(61, 57, 41, 0.28);
+}
+
+/* ---- 暖色玻璃材质（Claude 经典配色）---- */
+
+.glass {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.5));
+  backdrop-filter: blur(30px) saturate(160%);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  border: 1px solid rgba(61, 53, 41, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 20px 50px -18px rgba(61, 53, 41, 0.28);
+}
+
+.glass-pill {
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.4));
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(61, 53, 41, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.glass-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.glass-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.5) 48%,
+    transparent 62%
+  );
+  transform: translateX(-60%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+.glass-sheen:hover::after {
+  transform: translateX(60%);
+}

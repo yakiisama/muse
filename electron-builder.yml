@@ -1,0 +1,24 @@
+appId: com.muse.app
+productName: Muse
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+  - package.json
+extraResources:
+  - from: resources/bin/mac
+    to: bin/mac
+mac:
+  icon: build/icon.icns
+  category: public.app-category.music
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  identity: null
+  hardenedRuntime: false
+  gatekeeperAssess: false
+dmg:
+  sign: false
