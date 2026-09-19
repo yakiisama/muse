@@ -9,6 +9,7 @@ import ImmersivePlayer from './components/ImmersivePlayer'
 import SettingsPanel from './components/SettingsPanel'
 import Toaster from './components/Toaster'
 import { useAudioPlayer } from './hooks/useAudioPlayer'
+import { useArtworkAccent } from './hooks/useArtworkAccent'
 import { usePlayerStore } from './store/player'
 import { useToastStore } from './store/toast'
 
@@ -24,6 +25,7 @@ export default function App(): React.JSX.Element {
   const cancelDownloadTask = usePlayerStore((s) => s.cancelDownloadTask)
   const pushToast = useToastStore((s) => s.push)
   const { audioElement, seekTo, seekBy } = useAudioPlayer()
+  useArtworkAccent()
 
   useEffect(() => {
     loadLibrary()
@@ -54,10 +56,14 @@ export default function App(): React.JSX.Element {
     <div className="flex h-screen flex-col overflow-hidden">
       {audioElement}
       <Toaster />
-      <div className="h-8 shrink-0" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
-      <div className="relative flex min-h-0 flex-1 gap-3 px-3">
+      {/* 顶部整条可拖拽；侧栏透明透出 vibrancy，主区铺不透明面板 */}
+      <div className="relative flex min-h-0 flex-1">
+        <div
+          className="absolute inset-x-0 top-0 z-30 h-9"
+          style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+        />
         <Sidebar tab={tab} onTabChange={setTab} onOpenSettings={() => setSettingsOpen(true)} />
-        <main className="relative min-w-0 flex-1 overflow-hidden rounded-2xl">
+        <main className="panel relative min-w-0 flex-1 overflow-hidden border-l border-ink/10">
           <div className={`h-full ${tab === 'search' ? '' : 'hidden'}`}>
             <SearchView />
           </div>

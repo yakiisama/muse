@@ -1,4 +1,4 @@
-import { Disc3, Download, Library, Search, Settings } from 'lucide-react'
+import { Download, Library, Search, Settings } from 'lucide-react'
 import { usePlayerStore } from '../store/player'
 
 export type Tab = 'search' | 'library'
@@ -14,12 +14,7 @@ export default function Sidebar({ tab, onTabChange, onOpenSettings }: Props): Re
   const activeCount = downloads.filter((d) => d.status === 'downloading').length
 
   return (
-    <aside className="panel mb-3 flex w-60 shrink-0 flex-col gap-1 rounded-2xl px-3 pt-3 pb-4">
-      <div className="mb-3 flex items-center gap-2 border-b border-ink/10 px-2 pb-3 pt-6 text-ink/90">
-        <Disc3 className="size-5 text-accent" />
-        <span className="text-sm font-bold tracking-tight">Muse</span>
-      </div>
-
+    <aside className="flex w-52 shrink-0 flex-col gap-0.5 px-3 pt-12 pb-3">
       <NavItem
         icon={<Search className="size-4" />}
         label="搜索"
@@ -33,16 +28,16 @@ export default function Sidebar({ tab, onTabChange, onOpenSettings }: Props): Re
         onClick={() => onTabChange('library')}
       />
 
-      <div className="mt-auto flex flex-col gap-1 border-t border-ink/10 pt-3 text-xs text-ink/45">
-        <div className="flex items-center gap-1.5 px-2.5 pb-1">
-          <Download className="size-3.5 text-brass" />
+      <div className="mt-auto flex flex-col gap-0.5 text-xs text-ink/55">
+        <div className="flex items-center gap-2 px-2.5 py-2">
+          <Download className={`size-3.5 ${activeCount > 0 ? 'text-accent' : 'text-ink/40'}`} />
           <span>{activeCount > 0 ? `${activeCount} 个下载中` : '暂无下载任务'}</span>
         </div>
         <button
           onClick={onOpenSettings}
-          className="flex items-center gap-2.5 rounded-md px-3.5 py-2 text-sm text-ink/55 transition-colors hover:bg-ink/8 hover:text-ink/90"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-ink/75 transition-colors hover:bg-ink/8 hover:text-ink"
         >
-          <Settings className="size-4" />
+          <Settings className="size-4 text-ink/55" />
           设置
         </button>
       </div>
@@ -64,13 +59,12 @@ function NavItem({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2.5 rounded-md border-l-2 px-3 py-2 text-sm transition-colors ${
-        active
-          ? 'border-accent bg-ink/6 text-accent'
-          : 'border-transparent text-ink/55 hover:bg-ink/6 hover:text-ink/90'
+      aria-current={active ? 'page' : undefined}
+      className={`flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] transition-colors ${
+        active ? 'bg-ink/10 text-ink' : 'text-ink/75 hover:bg-ink/6 hover:text-ink'
       }`}
     >
-      {icon}
+      <span className={active ? 'text-accent' : 'text-ink/55'}>{icon}</span>
       {label}
     </button>
   )

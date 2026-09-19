@@ -2,16 +2,23 @@ import { useEffect, useState } from 'react'
 import { ExternalLink, FolderOpen, Loader2, Pencil, RefreshCw, X } from 'lucide-react'
 import type { AudioQuality } from '@shared/types'
 import { useToastStore } from '../store/toast'
+import Select from './ui/Select'
 
 interface Props {
   onClose: () => void
 }
 
 const QUALITY_LABELS: Record<AudioQuality, string> = {
-  '128K': '标准 · 128kbps',
-  '192K': '高品质 · 192kbps',
-  '320K': '极高 · 320kbps'
+  '128K': '标准',
+  '192K': '高品质',
+  '320K': '极高'
 }
+
+const QUALITY_OPTIONS = (Object.keys(QUALITY_LABELS) as AudioQuality[]).map((q) => ({
+  value: q,
+  label: QUALITY_LABELS[q],
+  hint: q.replace('K', ' kbps')
+}))
 
 export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
   const [downloadDir, setDownloadDir] = useState<string | null>(null)
@@ -110,12 +117,14 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30" onClick={onClose}>
       <div
-        className="panel w-[420px] max-w-[calc(100vw-2rem)] rounded-xl p-5"
+        role="dialog"
+        aria-label="设置"
+        className="popover w-[420px] max-w-[calc(100vw-2rem)] rounded-xl p-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between border-b border-ink/10 pb-3">
-          <p className="text-sm font-bold tracking-tight text-ink/90">设置</p>
-          <button onClick={onClose} className="rounded-md p-1.5 transition-colors hover:bg-ink/10">
+        <div className="mb-4 flex items-center justify-between border-b border-ink/8 pb-3">
+          <p className="text-sm font-semibold text-ink/90">设置</p>
+          <button onClick={onClose} aria-label="关闭" className="rounded-md p-1.5 transition-colors hover:bg-ink/10">
             <X className="size-4 text-ink/60" />
           </button>
         </div>
@@ -123,7 +132,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
         <div className="flex flex-col gap-4">
           <section>
             <p className="mb-2 px-1 text-xs font-medium text-ink/40">下载位置</p>
-            <div className="panel-sm rounded-lg p-3">
+            <div className="panel-2 rounded-lg p-3">
               <p className="truncate text-sm text-ink/70" title={downloadDir ?? ''}>
                 {downloadDir ?? '加载中…'}
               </p>
@@ -148,27 +157,23 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
 
           <section>
             <p className="mb-2 px-1 text-xs font-medium text-ink/40">下载音质</p>
-            <select
-              value={audioQuality ?? ''}
-              onChange={(e) => handleQualityChange(e.target.value as AudioQuality)}
-              className="panel-sm w-full rounded-lg px-3.5 py-2.5 text-sm text-ink/80 outline-none [&>option]:bg-paper [&>option]:text-ink"
-            >
-              {(Object.keys(QUALITY_LABELS) as AudioQuality[]).map((q) => (
-                <option key={q} value={q}>
-                  {QUALITY_LABELS[q]}
-                </option>
-              ))}
-            </select>
+            <Select
+              value={audioQuality}
+              options={QUALITY_OPTIONS}
+              onChange={handleQualityChange}
+              placeholder="加载中…"
+              aria-label="下载音质"
+            />
           </section>
 
           <section>
             <p className="mb-2 px-1 text-xs font-medium text-ink/40">更新</p>
-            <div className="panel-sm flex items-center justify-between gap-3 rounded-lg p-3">
+            <div className="panel-2 flex items-center justify-between gap-3 rounded-lg p-3">
               <p className="text-sm text-ink/70">当前版本 v{version || '…'}</p>
               <button
                 onClick={handleCheckUpdate}
                 disabled={checking}
-                className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50"
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-accent/60 hover:text-accent disabled:opacity-50"
               >
                 {checking ? (
                   <Loader2 className="size-3.5 animate-spin" />
@@ -182,7 +187,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
 
           <section>
             <p className="mb-2 px-1 text-xs font-medium text-ink/40">下载引擎（yt-dlp）</p>
-            <div className="panel-sm flex items-center justify-between gap-3 rounded-lg p-3">
+            <div className="panel-2 flex items-center justify-between gap-3 rounded-lg p-3">
               <div>
                 <p className="text-sm text-ink/70">{ytdlpVersion || '读取中…'}</p>
                 <p className="text-xs text-ink/40">
@@ -192,7 +197,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
               <button
                 onClick={handleCheckYtDlpUpdate}
                 disabled={ytdlpChecking}
-                className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-brass/60 hover:text-brass disabled:opacity-50"
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-accent/60 hover:text-accent disabled:opacity-50"
               >
                 {ytdlpChecking ? (
                   <Loader2 className="size-3.5 animate-spin" />
