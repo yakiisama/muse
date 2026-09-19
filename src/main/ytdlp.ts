@@ -73,8 +73,11 @@ async function runYtDlpJsonLines(args: string[]): Promise<unknown[]> {
 }
 
 export async function searchYoutube(query: string, limit = 20): Promise<SearchResult[]> {
+  // 搜索只需要 innertube API 的结果，跳过 youtube.com 首页那次请求（省 1 秒多），结果数不受影响
   const raw = await runYtDlpJsonLines([
     '--no-warnings',
+    '--extractor-args',
+    'youtubetab:skip=webpage',
     '--dump-json',
     '--flat-playlist',
     `ytsearch${limit}:${query}`
