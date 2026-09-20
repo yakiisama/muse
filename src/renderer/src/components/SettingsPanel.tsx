@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ExternalLink, FolderOpen, Loader2, Pencil, RefreshCw, X } from 'lucide-react'
 import type { AudioQuality } from '@shared/types'
 import { useToastStore } from '../store/toast'
+import { useUpdateStore } from '../store/update'
 import Select from './ui/Select'
 
 interface Props {
@@ -28,6 +29,8 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
   const [ytdlpVersion, setYtdlpVersion] = useState('')
   const [ytdlpChecking, setYtdlpChecking] = useState(false)
   const pushToast = useToastStore((s) => s.push)
+  const updateAvailable = useUpdateStore((s) => s.available)
+  const setUpdateAvailable = useUpdateStore((s) => s.setAvailable)
 
   useEffect(() => {
     window.api.getSettings().then((s) => {
@@ -57,6 +60,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
     setChecking(true)
     try {
       const res = await window.api.checkForUpdates()
+      setUpdateAvailable(res)
       if (res.hasUpdate) {
         pushToast(
           {
@@ -169,7 +173,18 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
           <section>
             <p className="mb-2 px-1 text-xs font-medium text-ink/40">更新</p>
             <div className="panel-2 flex items-center justify-between gap-3 rounded-lg p-3">
-              <p className="text-sm text-ink/70">当前版本 v{version || '…'}</p>
+              <div className="min-w-0">
+                <p className="text-sm text-ink/70">当前版本 v{version || '…'}</p>
+                {updateAvailable && (
+                  <button
+                    onClick={() => window.api.openExternal(updateAvailable.releaseUrl)}
+                    className="mt-0.5 flex items-center gap-1 text-xs text-accent hover:underline"
+                  >
+                    有新版本 v{updateAvailable.latestVersion}，前往下载
+                    <ExternalLink className="size-3" />
+                  </button>
+                )}
+              </div>
               <button
                 onClick={handleCheckUpdate}
                 disabled={checking}

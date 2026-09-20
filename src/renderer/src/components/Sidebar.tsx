@@ -1,5 +1,6 @@
 import { Download, Library, Search, Settings } from 'lucide-react'
 import { usePlayerStore } from '../store/player'
+import { useUpdateStore } from '../store/update'
 
 export type Tab = 'search' | 'library'
 
@@ -12,6 +13,7 @@ interface Props {
 export default function Sidebar({ tab, onTabChange, onOpenSettings }: Props): React.JSX.Element {
   const downloads = usePlayerStore((s) => s.downloads)
   const activeCount = downloads.filter((d) => d.status === 'downloading').length
+  const updateAvailable = useUpdateStore((s) => s.available !== null)
 
   return (
     <aside className="flex w-52 shrink-0 flex-col gap-0.5 px-3 pt-12 pb-3">
@@ -37,7 +39,15 @@ export default function Sidebar({ tab, onTabChange, onOpenSettings }: Props): Re
           onClick={onOpenSettings}
           className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] text-ink/75 transition-colors hover:bg-ink/8 hover:text-ink"
         >
-          <Settings className="size-4 text-ink/55" />
+          <span className="relative">
+            <Settings className="size-4 text-ink/55" />
+            {updateAvailable && (
+              <span
+                aria-label="有新版本"
+                className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-accent ring-2 ring-panel-2"
+              />
+            )}
+          </span>
           设置
         </button>
       </div>

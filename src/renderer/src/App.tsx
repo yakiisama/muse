@@ -11,6 +11,7 @@ import Toaster from './components/Toaster'
 import { useAudioPlayer } from './hooks/useAudioPlayer'
 import { usePlayerStore } from './store/player'
 import { useToastStore } from './store/toast'
+import { useUpdateStore } from './store/update'
 
 export default function App(): React.JSX.Element {
   const [tab, setTab] = useState<Tab>('search')
@@ -24,6 +25,7 @@ export default function App(): React.JSX.Element {
   const cancelDownloadTask = usePlayerStore((s) => s.cancelDownloadTask)
   const pushToast = useToastStore((s) => s.push)
   const dismissToast = useToastStore((s) => s.dismiss)
+  const setUpdateAvailable = useUpdateStore((s) => s.setAvailable)
   const { audioElement, seekTo, seekBy } = useAudioPlayer()
 
   useEffect(() => {
@@ -56,7 +58,12 @@ export default function App(): React.JSX.Element {
         warmupToast = null
       }
     })
+    // 启动后静默检查一次新版本，有的话在「设置」上挂小红点；失败（离线等）就当没有
+    const updateTimer = setTimeout(() => {
+      window.api.checkForUpdates().then(setUpdateAvailable, () => {})
+    }, 3000)
     return () => {
+      clearTimeout(updateTimer)
       offProgress()
       offDone()
       offError()
