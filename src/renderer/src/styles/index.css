@@ -76,7 +76,17 @@ button:disabled {
   background: var(--color-panel-2);
 }
 
-/* 浮层（下载队列 / 歌词 / 设置 / 提示）：半透明 + 模糊，跟系统弹出层一致 */
+/* 模态对话框（设置）：不透明。下面是被遮罩压暗的正文，透出来只会糊成一片，
+ * 所以这里不用毛玻璃，只留描边 + 投影。 */
+.dialog {
+  background: var(--color-panel);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 24px 60px -16px rgba(0, 0, 0, 0.45);
+}
+
+/* 浮层（下载队列 / 歌词 / 下拉 / 提示）：半透明 + 模糊，跟系统弹出层一致 */
 .popover {
   background: color-mix(in srgb, var(--color-panel) 78%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-ink) 12%, transparent);

@@ -119,7 +119,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
       <div
         role="dialog"
         aria-label="设置"
-        className="popover w-[420px] max-w-[calc(100vw-2rem)] rounded-xl p-5"
+        className="dialog w-[420px] max-w-[calc(100vw-2rem)] rounded-xl p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between border-b border-ink/8 pb-3">
