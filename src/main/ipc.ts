@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, net, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
 import {
   getAudioQuality,
@@ -24,21 +24,9 @@ import {
 import { fetchLyrics } from './lyrics'
 import { extractArtwork } from './artwork'
 import { downloadYtDlpUpdate, getLatestYtDlp, getYtDlpVersion } from './ytdlpUpdate'
+import { checkForUpdate, installUpdate } from './appUpdate'
 
-const REPO = 'yakiisama/muse'
 const downloadCancelers = new Map<string, () => void>()
-
-function isNewerVersion(latest: string, current: string): boolean {
-  const parts = (v: string): number[] => v.split('.').map((n) => parseInt(n, 10) || 0)
-  const a = parts(latest)
-  const b = parts(current)
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const x = a[i] ?? 0
-    const y = b[i] ?? 0
-    if (x !== y) return x > y
-  }
-  return false
-}
 
 export function registerIpcHandlers(win: BrowserWindow): void {
   ipcMain.handle('search:query', async (_event, query: string) => {
@@ -103,19 +91,13 @@ export function registerIpcHandlers(win: BrowserWindow): void {
     return shell.openExternal(url)
   })
 
-  ipcMain.handle('update:check', async () => {
-    const currentVersion = app.getVersion()
-    const res = await net.fetch(`https://api.github.com/repos/${REPO}/releases/latest`)
-    if (!res.ok) throw new Error(`GitHub 返回 ${res.status}`)
-    const data = (await res.json()) as { tag_name?: string; html_url?: string }
-    const latestVersion = (data.tag_name ?? '').replace(/^v/, '')
-    return {
-      currentVersion,
-      latestVersion,
-      hasUpdate: latestVersion.length > 0 && isNewerVersion(latestVersion, currentVersion),
-      releaseUrl: data.html_url ?? `https://github.com/${REPO}/releases`
-    }
-  })
+  ipcMain.handle('update:check', () => checkForUpdate())
+
+  ipcMain.handle('update:install', (_event, zipUrl: string) =>
+    installUpdate(zipUrl, (e) => {
+      if (!win.isDestroyed()) win.webContents.send('update:progress', e)
+    })
+  )
 
   ipcMain.handle('download:start', (_event, result: SearchResult) => {
     const taskId = randomUUID()

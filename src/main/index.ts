@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { registerIpcHandlers } from './ipc'
 import { onWarmup, prewarmYtDlp } from './ytdlpRuntime'
+import { cleanupOldBundle } from './appUpdate'
 
 const MEDIA_SCHEME = 'media'
 
@@ -85,6 +86,7 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+  cleanupOldBundle()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

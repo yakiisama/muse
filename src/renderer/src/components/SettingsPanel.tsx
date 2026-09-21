@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { ExternalLink, FolderOpen, Loader2, Pencil, RefreshCw, X } from 'lucide-react'
-import type { AudioQuality } from '@shared/types'
+import { Download, ExternalLink, FolderOpen, Loader2, Pencil, RefreshCw, X } from 'lucide-react'
+import type { AudioQuality, UpdateProgressEvent } from '@shared/types'
 import { useToastStore } from '../store/toast'
 import { useUpdateStore } from '../store/update'
 import Select from './ui/Select'
@@ -21,11 +21,16 @@ const QUALITY_OPTIONS = (Object.keys(QUALITY_LABELS) as AudioQuality[]).map((q) 
   hint: q.replace('K', ' kbps')
 }))
 
+function formatMB(bytes: number): string {
+  return `${(bytes / 1024 / 1024).toFixed(0)} MB`
+}
+
 export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
   const [downloadDir, setDownloadDir] = useState<string | null>(null)
   const [audioQuality, setAudioQuality] = useState<AudioQuality | null>(null)
   const [version, setVersion] = useState('')
   const [checking, setChecking] = useState(false)
+  const [updateProgress, setUpdateProgress] = useState<UpdateProgressEvent | null>(null)
   const [ytdlpVersion, setYtdlpVersion] = useState('')
   const [ytdlpChecking, setYtdlpChecking] = useState(false)
   const pushToast = useToastStore((s) => s.push)
@@ -39,6 +44,10 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
     })
     window.api.getAppVersion().then(setVersion)
     window.api.getYtDlpVersion().then(setYtdlpVersion).catch(() => setYtdlpVersion('未知'))
+    const offProgress = window.api.onUpdateProgress(setUpdateProgress)
+    return () => {
+      offProgress()
+    }
   }, [])
 
   async function handleChangeDir(): Promise<void> {
@@ -62,15 +71,7 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
       const res = await window.api.checkForUpdates()
       setUpdateAvailable(res)
       if (res.hasUpdate) {
-        pushToast(
-          {
-            type: 'info',
-            message: `发现新版本 v${res.latestVersion}（当前 v${res.currentVersion}）`,
-            actionLabel: '前往下载',
-            onAction: () => window.api.openExternal(res.releaseUrl)
-          },
-          { sticky: true }
-        )
+        pushToast({ type: 'info', message: `发现新版本 v${res.latestVersion}` })
       } else {
         pushToast({ type: 'success', message: '已是最新版本' })
       }
@@ -79,6 +80,19 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
       pushToast({ type: 'error', message: `检查更新失败：${message}` })
     } finally {
       setChecking(false)
+    }
+  }
+
+  async function handleInstallUpdate(): Promise<void> {
+    if (!updateAvailable?.zipUrl) return
+    setUpdateProgress({ phase: 'downloading', percent: 0 })
+    try {
+      // 成功的话应用会自己重启，不会走到下面
+      await window.api.installUpdate(updateAvailable.zipUrl)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      pushToast({ type: 'error', message: `更新失败：${message}` }, { sticky: true })
+      setUpdateProgress(null)
     }
   }
 
@@ -175,28 +189,65 @@ export default function SettingsPanel({ onClose }: Props): React.JSX.Element {
             <div className="panel-2 flex items-center justify-between gap-3 rounded-lg p-3">
               <div className="min-w-0">
                 <p className="text-sm text-ink/70">当前版本 v{version || '…'}</p>
-                {updateAvailable && (
-                  <button
-                    onClick={() => window.api.openExternal(updateAvailable.releaseUrl)}
-                    className="mt-0.5 flex items-center gap-1 text-xs text-accent hover:underline"
-                  >
-                    有新版本 v{updateAvailable.latestVersion}，前往下载
-                    <ExternalLink className="size-3" />
-                  </button>
+                {updateAvailable && !updateProgress && (
+                  <p className="mt-0.5 text-xs text-accent">
+                    有新版本 v{updateAvailable.latestVersion}
+                    {updateAvailable.zipUrl ? `（${formatMB(updateAvailable.zipSize)}）` : ''}
+                  </p>
+                )}
+                {updateProgress && (
+                  <div className="mt-1.5">
+                    <p className="text-xs text-ink/50">
+                      {updateProgress.phase === 'downloading'
+                        ? `正在下载… ${updateProgress.percent}%`
+                        : '正在安装，稍后自动重启…'}
+                    </p>
+                    <div className="mt-1 h-1 w-40 overflow-hidden rounded-full bg-ink/10">
+                      <div
+                        className="h-full rounded-full bg-accent transition-[width] duration-200"
+                        style={{ width: `${updateProgress.percent}%` }}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
-              <button
-                onClick={handleCheckUpdate}
-                disabled={checking}
-                className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-accent/60 hover:text-accent disabled:opacity-50"
-              >
-                {checking ? (
-                  <Loader2 className="size-3.5 animate-spin" />
+              {updateAvailable ? (
+                updateAvailable.zipUrl ? (
+                  <button
+                    onClick={handleInstallUpdate}
+                    disabled={updateProgress !== null}
+                    className="flex shrink-0 items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {updateProgress ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Download className="size-3.5" />
+                    )}
+                    立即更新
+                  </button>
                 ) : (
-                  <RefreshCw className="size-3.5" />
-                )}
-                检查更新
-              </button>
+                  <button
+                    onClick={() => window.api.openExternal(updateAvailable.releaseUrl)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-accent-fg transition-opacity hover:opacity-90"
+                  >
+                    <ExternalLink className="size-3.5" />
+                    前往下载
+                  </button>
+                )
+              ) : (
+                <button
+                  onClick={handleCheckUpdate}
+                  disabled={checking}
+                  className="flex shrink-0 items-center gap-1.5 rounded-md border border-ink/15 px-3 py-1.5 text-xs font-medium text-ink/80 transition-colors hover:border-accent/60 hover:text-accent disabled:opacity-50"
+                >
+                  {checking ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="size-3.5" />
+                  )}
+                  检查更新
+                </button>
+              )}
             </div>
           </section>
 

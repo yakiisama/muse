@@ -45,6 +45,14 @@ export interface UpdateCheckResult {
   latestVersion: string
   hasUpdate: boolean
   releaseUrl: string
+  /** release 里的 arm64 zip，有它才能应用内更新；null 时只能去网页下载 */
+  zipUrl: string | null
+  zipSize: number
+}
+
+export interface UpdateProgressEvent {
+  phase: 'downloading' | 'installing'
+  percent: number
 }
 
 export interface YtDlpUpdateCheckResult {
