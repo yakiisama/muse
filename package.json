@@ -1,6 +1,6 @@
 {
   "name": "muse",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "搜索、下载与播放音乐的桌面聚合工具",
   "main": "./out/main/index.js",
   "author": "Muse",
